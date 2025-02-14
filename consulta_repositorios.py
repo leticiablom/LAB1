@@ -1,42 +1,8 @@
 import requests
 import csv
 import time
-
-# Configurações da API
-GITHUB_API_TOKEN = 'INSIRA O TOKEN AQUI'
-API_ENDPOINT = 'https://api.github.com/graphql'
-API_HEADERS = {"Authorization": f"Bearer {GITHUB_API_TOKEN}"}
-
-def build_query(cursor=None):
-    """Gera a query GraphQL com paginação opcional."""
-    after_clause = f', after: "{cursor}"' if cursor else ''
-    query_text = f"""
-    {{
-      search(query: "stars:>10000", type: REPOSITORY, first: 10{after_clause}) {{
-        edges {{
-          cursor
-          node {{
-            ... on Repository {{
-              name
-              createdAt
-              pullRequests(states: MERGED) {{ totalCount }}
-              releases {{ totalCount }}
-              updatedAt
-              primaryLanguage {{ name }}
-              issues(first: 100) {{
-                totalCount
-                nodes {{ state }}
-              }}
-            }}
-          }}
-        }}
-        pageInfo {{
-          hasNextPage
-          endCursor
-        }}
-      }}
-    }}"""
-    return query_text
+from config import API_ENDPOINT, API_HEADERS
+from queries import build_query  
 
 def execute_query(query_text, max_attempts=3):
     """Executa a query na API com tentativas e backoff exponencial."""
@@ -62,7 +28,6 @@ def collect_repositories(target=100):
             search_result = api_result['data']['search']
             for edge in search_result['edges']:
                 repo_data = edge['node']
-                # Calcula a quantidade de issues fechadas e abertas
                 closed = sum(1 for issue in repo_data['issues']['nodes'] if issue['state'] == 'CLOSED')
                 open_ = sum(1 for issue in repo_data['issues']['nodes'] if issue['state'] == 'OPEN')
                 collected.append([
