@@ -7,7 +7,7 @@ from queries import build_query
 def execute_query(query_text, max_attempts=3):
     """Executa a query na API com tentativas e backoff exponencial."""
     for attempt in range(max_attempts):
-        resp = requests.post(API_ENDPOINT, json={'query': query_text}, headers=API_HEADERS, timeout=30)
+        resp = requests.post(API_ENDPOINT, json={'query': query_text}, headers=API_HEADERS, timeout=60)
         if resp.status_code == 200:
             return resp.json()
         elif attempt < max_attempts - 1:
@@ -15,7 +15,7 @@ def execute_query(query_text, max_attempts=3):
         else:
             raise Exception(f"Falha na query (status {resp.status_code}): {resp.text}")
 
-def collect_repositories(target=100):
+def collect_repositories(target=1000):
     """Coleta repositórios paginados até atingir o número desejado."""
     collected = []
     cursor_marker = None
@@ -63,5 +63,5 @@ def export_to_csv(data, output_file='repositorios.csv'):
     print(f"Dados coletados e salvos em '{output_file}' ({len(data)} repositórios)")
 
 if __name__ == "__main__":
-    repos_info = collect_repositories(target=100)
+    repos_info = collect_repositories(target=1000)
     export_to_csv(repos_info)
